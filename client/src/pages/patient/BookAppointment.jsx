@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import api from '../../services/api';
+
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 function BookAppointment() {
   const navigate = useNavigate();
@@ -15,8 +26,11 @@ function BookAppointment() {
   const [selectedSlot, setSelectedSlot] = useState('');
   const [reason, setReason] = useState('');
   
+  const { user } = useSelector((state) => state.auth);
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [paymentStatus, setPaymentStatus] = useState('');
 
   useEffect(() => {
     fetchDepartments();
@@ -109,14 +123,80 @@ function BookAppointment() {
     };
 
     try {
-      const { data } = await api.post('/appointments', payload);
-      if (data.success) {
-        navigate('/patient/appointments');
+      // 1. Create Appointment
+      const { data: aptData } = await api.post('/appointments', payload);
+      if (!aptData.success) throw new Error('Failed to create appointment');
+      
+      const appointmentId = aptData.appointment._id;
+
+      // 2. Load Razorpay script
+      setPaymentStatus('Initializing Payment...');
+      const res = await loadRazorpayScript();
+      if (!res) {
+        setError('Razorpay SDK failed to load. Are you online?');
+        return;
       }
+
+      // 3. Initiate Order
+      const { data: initData } = await api.post('/payments/initiate', { appointmentId });
+      if (!initData.success) throw new Error('Failed to initiate payment');
+      
+      const order = initData.order;
+
+      // If it is a simulated order from backend (fallback)
+      if (order.id.startsWith('order_sim_')) {
+        setPaymentStatus('Simulating Payment Success...');
+        // Simulate immediate confirmation
+        await api.post('/payments/confirm', {
+          razorpayOrderId: order.id,
+          razorpayPaymentId: 'pay_sim_' + Math.random().toString(36).substring(7),
+          razorpaySignature: 'sim_signature'
+        });
+        navigate('/patient/appointments');
+        return;
+      }
+
+      // 4. Open Razorpay Checkout Modal
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'placeholder', // Fallback or loaded key
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Hospital Management System',
+        description: 'Consultation Fee Payment',
+        order_id: order.id,
+        handler: async function (response) {
+          try {
+            setPaymentStatus('Verifying Payment...');
+            const { data: confirmData } = await api.post('/payments/confirm', {
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            });
+            if (confirmData.success) {
+              navigate('/patient/appointments');
+            }
+          } catch (err) {
+            setError(err.response?.data?.message || 'Payment verification failed');
+          }
+        },
+        prefill: {
+          name: user?.name,
+          email: user?.email,
+          contact: user?.phone,
+        },
+        theme: {
+          color: '#0284c7', // primary-600
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+
     } catch (err) {
-      setError(err.response?.data?.message || 'Double booking error: This slot is already taken.');
+      setError(err.response?.data?.message || err.message || 'Error processing booking.');
     } finally {
       setLoading(false);
+      setPaymentStatus('');
     }
   };
 
@@ -259,7 +339,7 @@ function BookAppointment() {
               disabled={loading}
               className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl text-sm transition-all"
             >
-              {loading ? 'Processing Reservation...' : `Confirm Booking (Pay ₹${selectedDoc.consultationFee})`}
+              {loading ? (paymentStatus || 'Processing Reservation...') : `Confirm Booking (Pay ₹${selectedDoc.consultationFee})`}
             </button>
           </div>
         </form>

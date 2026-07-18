@@ -8,8 +8,8 @@ const Razorpay = require('razorpay');
  * Razorpay auth error until valid keys are set - this is expected and safe.
  */
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
+  key_id: process.env.RAZORPAY_KEY_ID || 'mock_key_id',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'mock_key_secret',
 });
 
 module.exports = razorpay;

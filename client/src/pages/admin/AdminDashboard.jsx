@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -158,30 +162,41 @@ function AdminDashboard() {
         <div className="card space-y-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white">Booking Status Split</h2>
           
-          <div className="space-y-4 pt-2">
-            {Object.entries(statusSplit).map(([status, count]) => {
-              const total = totalAppointments || 1;
-              const pct = Math.round((count / total) * 100);
-              
-              // Colors
-              let color = 'bg-primary-500';
-              if (status === 'confirmed') color = 'bg-green-500';
-              else if (status === 'completed') color = 'bg-blue-500';
-              else if (status === 'cancelled') color = 'bg-red-500';
-              else if (status === 'pending') color = 'bg-yellow-500';
-
-              return (
-                <div key={status} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium capitalize">
-                    <span className="text-gray-700 dark:text-gray-300">{status} ({count})</span>
-                    <span className="text-gray-500">{pct}%</span>
-                  </div>
-                  <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
-                    <div className={`${color} h-2.5 rounded-full`} style={{ width: `${pct}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex justify-center items-center h-64">
+            {totalAppointments === 0 ? (
+              <p className="text-gray-500">No appointments to display</p>
+            ) : (
+              <Doughnut 
+                data={{
+                  labels: Object.keys(statusSplit).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+                  datasets: [
+                    {
+                      data: Object.values(statusSplit),
+                      backgroundColor: [
+                        '#eab308', // pending (yellow-500)
+                        '#22c55e', // confirmed (green-500)
+                        '#3b82f6', // completed (blue-500)
+                        '#ef4444'  // cancelled (red-500)
+                      ],
+                      borderWidth: 0,
+                    },
+                  ],
+                }}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      position: 'bottom',
+                      labels: {
+                        color: document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#374151',
+                        padding: 20
+                      }
+                    }
+                  }
+                }}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -4,7 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
+// xss-clean removed — it corrupts JSON bodies in Node 18+ (known bug)
 const rateLimit = require('express-rate-limit');
 
 const { notFound, errorHandler } = require('./middleware/errorHandler');
@@ -24,7 +24,7 @@ app.use(
         'http://127.0.0.1:5173',
         'http://127.0.0.1:5174'
       ];
-      if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:')) {
+      if (allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.endsWith('.vercel.app')) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
@@ -36,7 +36,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 app.use(mongoSanitize()); // strips $ and . from req.body/query/params keys
-app.use(xss()); // sanitizes user input against XSS
 
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
@@ -60,6 +59,9 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ success: true, message: 'HMS API is healthy', timestamp: new Date().toISOString() });
 });
 
+const runSeed = require('./controllers/seedController');
+app.get('/api/seed', runSeed);
+
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/departments', require('./routes/departmentRoutes'));
@@ -69,6 +71,10 @@ app.use('/api/appointments', require('./routes/appointmentRoutes'));
 app.use('/api/prescriptions', require('./routes/prescriptionRoutes'));
 app.use('/api/reports', require('./routes/medicalReportRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/cron', require('./routes/cronRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/inventory', require('./routes/inventoryRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 

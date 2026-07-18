@@ -20,17 +20,21 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageDoctors from './pages/admin/ManageDoctors';
 import ManageDepartments from './pages/admin/ManageDepartments';
 import ManagePatients from './pages/admin/ManagePatients';
+import AdminBloodBank from './pages/admin/AdminBloodBank';
+import AdminPharmacy from './pages/admin/AdminPharmacy';
 
 // Doctor Portal Pages
 import DoctorDashboard from './pages/doctor/DoctorDashboard';
 import ManageAvailability from './pages/doctor/ManageAvailability';
 import PrescriptionEditor from './pages/doctor/PrescriptionEditor';
+import VideoCall from './pages/VideoCall';
 
 // Patient Portal Pages
 import PatientDashboard from './pages/patient/PatientDashboard';
 import BookAppointment from './pages/patient/BookAppointment';
 import PatientAppointments from './pages/patient/PatientAppointments';
 import MedicalRecords from './pages/patient/MedicalRecords';
+import Messages from './pages/Messages';
 
 // Role Guard Component
 function RoleGuard({ allowedRoles, children }) {
@@ -103,6 +107,10 @@ function App() {
 
           {/* Protected Dashboards */}
           <Route element={<DashboardLayout />}>
+            {/* Common Protected Routes */}
+            <Route path="/video-call/:roomId" element={<VideoCall />} />
+            <Route path="/messages" element={<Messages />} />
+            
             {/* Admin Portal */}
             <Route
               path="/admin"
@@ -133,6 +141,22 @@ function App() {
               element={
                 <RoleGuard allowedRoles={['admin']}>
                   <ManagePatients />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/admin/blood-bank"
+              element={
+                <RoleGuard allowedRoles={['admin']}>
+                  <AdminBloodBank />
+                </RoleGuard>
+              }
+            />
+            <Route
+              path="/admin/pharmacy"
+              element={
+                <RoleGuard allowedRoles={['admin']}>
+                  <AdminPharmacy />
                 </RoleGuard>
               }
             />

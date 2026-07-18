@@ -116,13 +116,18 @@ function DoctorDashboard() {
                       </td>
                       <td className="py-3 capitalize">{apt.status}</td>
                       <td className="py-3 text-right space-x-2">
+                        {apt.status === 'confirmed' && (
+                          <Link to={`/video-call/${apt._id}`} className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-2">
+                            Join Call
+                          </Link>
+                        )}
                         <button onClick={() => setSelectedAppointment(apt)} className="text-xs text-primary-600 hover:underline">
                           Manage
                         </button>
                         {apt.status !== 'completed' && (
                           <Link
                             to={`/doctor/prescribe?aptId=${apt._id}&patId=${apt.patient?._id}`}
-                            className="text-xs font-medium text-emerald-650 hover:underline"
+                            className="text-xs font-medium text-emerald-650 hover:underline ml-2"
                           >
                             Prescribe
                           </Link>

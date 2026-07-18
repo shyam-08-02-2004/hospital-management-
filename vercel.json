@@ -1,26 +1,28 @@
 {
   "version": 2,
+  "env": {
+    "SMTP_HOST": "smtp.gmail.com",
+    "SMTP_PORT": "587",
+    "SMTP_USER": "",
+    "SMTP_PASS": "",
+    "EMAIL_FROM": "\"Hospital Management System\" <no-reply@hms.com>",
+    "CLIENT_URL": "https://hospital-management-system-pi-roan.vercel.app",
+    "VITE_API_URL": "https://hospital-management-system-pi-roan.vercel.app/api"
+  },
   "builds": [
-    {
-      "src": "client/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "server/server.js",
-      "use": "@vercel/node"
-    }
+    { "src": "client/package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
+    { "src": "server/server.js", "use": "@vercel/node" }
   ],
-  "routes": [
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/server/server.js" },
+    { "source": "/assets/(.*)", "destination": "/client/assets/$1" },
+    { "source": "/(.*)", "destination": "/client/index.html" }
+  ],
+  "crons": [
     {
-      "src": "/api/(.*)",
-      "dest": "/server/server.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/client/$1"
+      "path": "/api/cron/reminders",
+      "schedule": "0 2 * * *"
     }
   ]
 }
+

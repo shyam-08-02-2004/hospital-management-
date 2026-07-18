@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import paymentQr from '../../assets/payment_qr.jpg';
 
 function PatientAppointments() {
+  const navigate = useNavigate();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -249,6 +251,14 @@ function PatientAppointments() {
                     )}
                     {apt.status !== 'completed' && apt.status !== 'cancelled' && (
                       <>
+                        {apt.status === 'confirmed' && (
+                          <button
+                            onClick={() => navigate(`/video-call/${apt._id}`)}
+                            className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-3"
+                          >
+                            Join Call
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setRescheduleApt(apt);

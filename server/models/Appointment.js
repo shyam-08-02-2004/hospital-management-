@@ -21,6 +21,10 @@ const appointmentSchema = new mongoose.Schema(
     consultationFee: { type: Number, required: true },
     isPaid: { type: Boolean, default: false },
     payment: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+    reminderSent: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
