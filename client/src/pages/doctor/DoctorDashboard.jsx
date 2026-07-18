@@ -56,35 +56,68 @@ function DoctorDashboard() {
   const { todaysAppointments, totalAppointments, completedAppointments, uniquePatientsCount, recentPrescriptions } = stats;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white">Doctor Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">Doctor Dashboard</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">View today's check-ins, consult schedules, and recent prescriptions.</p>
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="card">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Consultations</p>
-          <p className="text-3xl font-extrabold text-gray-900 dark:text-white mt-1">{totalAppointments}</p>
+      <div className="grid grid-cols-3 gap-3 sm:gap-6">
+        <div className="card p-3 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Consultations</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white mt-1">{totalAppointments}</p>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Completed Sessions</p>
-          <p className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{completedAppointments}</p>
+        <div className="card p-3 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Completed</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">{completedAppointments}</p>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Unique Patients</p>
-          <p className="text-3xl font-extrabold text-primary-650 dark:text-primary-400 mt-1">{uniquePatientsCount}</p>
+        <div className="card p-3 sm:p-6">
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">Patients</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-primary-600 dark:text-primary-400 mt-1">{uniquePatientsCount}</p>
         </div>
       </div>
 
       {/* Main Grid split */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Today's appointments schedule */}
-        <div className="card lg:col-span-2 space-y-6">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Today's Consultation Schedule</h2>
-          
-          <div className="overflow-x-auto">
+        <div className="card lg:col-span-2 space-y-4">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Today's Schedule</h2>
+
+          {/* Mobile Cards */}
+          <div className="space-y-3 sm:hidden">
+            {todaysAppointments.length === 0 ? (
+              <p className="text-center py-8 text-gray-400 text-sm">No appointments scheduled for today.</p>
+            ) : (
+              todaysAppointments.map((apt) => (
+                <div key={apt._id} className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-3 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-gray-900 dark:text-white text-sm">{apt.patient?.user?.name}</p>
+                      <p className="text-xs text-primary-600 font-semibold">{apt.startTime} · {apt.reasonForVisit || 'Checkup'}</p>
+                    </div>
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full capitalize ${
+                      apt.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                      apt.status === 'completed' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>{apt.status}</span>
+                  </div>
+                  <div className="flex items-center gap-3 pt-1">
+                    {apt.status === 'confirmed' && (
+                      <Link to={`/video-call/${apt._id}`} className="text-xs font-bold text-blue-600">Join Call</Link>
+                    )}
+                    <button onClick={() => setSelectedAppointment(apt)} className="text-xs text-primary-600">Manage</button>
+                    {apt.status !== 'completed' && (
+                      <Link to={`/doctor/prescribe?aptId=${apt._id}&patId=${apt.patient?._id}`} className="text-xs font-medium text-emerald-600">Prescribe</Link>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="overflow-x-auto hidden sm:block">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
               <thead>
                 <tr className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -96,7 +129,7 @@ function DoctorDashboard() {
                   <th className="pb-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-850 text-sm">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
                 {todaysAppointments.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-gray-400">No appointments scheduled for today.</td>
@@ -117,20 +150,11 @@ function DoctorDashboard() {
                       <td className="py-3 capitalize">{apt.status}</td>
                       <td className="py-3 text-right space-x-2">
                         {apt.status === 'confirmed' && (
-                          <Link to={`/video-call/${apt._id}`} className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-2">
-                            Join Call
-                          </Link>
+                          <Link to={`/video-call/${apt._id}`} className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-2">Join Call</Link>
                         )}
-                        <button onClick={() => setSelectedAppointment(apt)} className="text-xs text-primary-600 hover:underline">
-                          Manage
-                        </button>
+                        <button onClick={() => setSelectedAppointment(apt)} className="text-xs text-primary-600 hover:underline">Manage</button>
                         {apt.status !== 'completed' && (
-                          <Link
-                            to={`/doctor/prescribe?aptId=${apt._id}&patId=${apt.patient?._id}`}
-                            className="text-xs font-medium text-emerald-650 hover:underline ml-2"
-                          >
-                            Prescribe
-                          </Link>
+                          <Link to={`/doctor/prescribe?aptId=${apt._id}&patId=${apt.patient?._id}`} className="text-xs font-medium text-emerald-600 hover:underline ml-2">Prescribe</Link>
                         )}
                       </td>
                     </tr>

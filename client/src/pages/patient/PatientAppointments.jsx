@@ -192,13 +192,64 @@ function PatientAppointments() {
         </div>
       )}
 
-      {/* Appointments List */}
-      <div className="card overflow-x-auto">
+      {/* Appointments List - Mobile Cards */}
+      <div className="space-y-4 sm:hidden">
+        {appointments.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">No appointments scheduled yet.</div>
+        ) : (
+          appointments.map((apt) => (
+            <div key={apt._id} className="card space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white text-sm">Dr. {apt.doctor?.user?.name || 'Deleted'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{apt.department?.name || 'N/A'}</p>
+                </div>
+                <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full capitalize flex-shrink-0 ${
+                  apt.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-950/20 dark:text-green-400' :
+                  apt.status === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400' :
+                  apt.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-950/20 dark:text-red-400' :
+                  'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/20 dark:text-yellow-400'
+                }`}>
+                  {apt.status}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-gray-400">
+                <span>📅 {new Date(apt.date).toLocaleDateString()} at {apt.startTime}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">₹{apt.consultationFee}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
+                  apt.isPaid ? 'bg-green-100 text-green-800 dark:bg-green-950/20' : 'bg-red-100 text-red-800 dark:bg-red-950/20'
+                }`}>
+                  {apt.isPaid ? '✓ Paid' : 'Unpaid'}
+                </span>
+                <div className="flex items-center gap-3">
+                  {!apt.isPaid && apt.status !== 'cancelled' && (
+                    <button onClick={() => handlePayment(apt._id)} disabled={paymentLoading} className="text-xs font-bold text-emerald-600 disabled:opacity-50">Pay Now</button>
+                  )}
+                  {apt.status !== 'completed' && apt.status !== 'cancelled' && (
+                    <>
+                      {apt.status === 'confirmed' && (
+                        <button onClick={() => navigate(`/video-call/${apt._id}`)} className="text-xs font-bold text-blue-600">Join Call</button>
+                      )}
+                      <button onClick={() => { setRescheduleApt(apt); setRescheduleDate(new Date(apt.date).toISOString().split('T')[0]); }} className="text-xs text-primary-600">Reschedule</button>
+                      <button onClick={() => setCancelId(apt._id)} className="text-xs text-red-500 font-semibold">Cancel</button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Appointments Table - Desktop */}
+      <div className="card overflow-x-auto hidden sm:block">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
           <thead>
             <tr className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               <th className="pb-3">Doctor</th>
-              <th className="pb-3">Clinic Room</th>
+              <th className="pb-3">Dept</th>
               <th className="pb-3">Date / Time</th>
               <th className="pb-3">Fee</th>
               <th className="pb-3">Payment</th>
@@ -206,7 +257,7 @@ function PatientAppointments() {
               <th className="pb-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-850 text-sm">
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-sm">
             {appointments.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-gray-400">No appointments scheduled yet.</td>
@@ -214,18 +265,12 @@ function PatientAppointments() {
             ) : (
               appointments.map((apt) => (
                 <tr key={apt._id} className="text-gray-700 dark:text-gray-300">
-                  <td className="py-3 font-semibold text-gray-905 dark:text-white">
-                    Dr. {apt.doctor?.user?.name || 'Deleted'}
-                  </td>
+                  <td className="py-3 font-semibold text-gray-900 dark:text-white">Dr. {apt.doctor?.user?.name || 'Deleted'}</td>
                   <td className="py-3">{apt.department?.name || 'N/A'}</td>
-                  <td className="py-3">
-                    {new Date(apt.date).toLocaleDateString()} at {apt.startTime}
-                  </td>
+                  <td className="py-3">{new Date(apt.date).toLocaleDateString()} at {apt.startTime}</td>
                   <td className="py-3">₹{apt.consultationFee}</td>
                   <td className="py-3">
-                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                      apt.isPaid ? 'bg-green-100 text-green-800 dark:bg-green-950/20' : 'bg-red-100 text-red-800 dark:bg-red-950/20'
-                    }`}>
+                    <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${apt.isPaid ? 'bg-green-100 text-green-800 dark:bg-green-950/20' : 'bg-red-100 text-red-800 dark:bg-red-950/20'}`}>
                       {apt.isPaid ? 'Paid' : 'Unpaid'}
                     </span>
                   </td>
@@ -234,46 +279,20 @@ function PatientAppointments() {
                       apt.status === 'confirmed' ? 'bg-green-100 text-green-800 dark:bg-green-950/20 dark:text-green-400' :
                       apt.status === 'completed' ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/20 dark:text-blue-400' :
                       apt.status === 'cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-950/20 dark:text-red-400' :
-                      'bg-yellow-105 text-yellow-800 dark:bg-yellow-950/20 dark:text-yellow-400'
-                    }`}>
-                      {apt.status}
-                    </span>
+                      'bg-yellow-100 text-yellow-800 dark:bg-yellow-950/20 dark:text-yellow-400'
+                    }`}>{apt.status}</span>
                   </td>
                   <td className="py-3 text-right space-x-3">
                     {!apt.isPaid && apt.status !== 'cancelled' && (
-                      <button
-                        onClick={() => handlePayment(apt._id)}
-                        disabled={paymentLoading}
-                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:opacity-50"
-                      >
-                        Pay Now
-                      </button>
+                      <button onClick={() => handlePayment(apt._id)} disabled={paymentLoading} className="text-xs font-bold text-emerald-600 hover:text-emerald-700 disabled:opacity-50">Pay Now</button>
                     )}
                     {apt.status !== 'completed' && apt.status !== 'cancelled' && (
                       <>
                         {apt.status === 'confirmed' && (
-                          <button
-                            onClick={() => navigate(`/video-call/${apt._id}`)}
-                            className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-3"
-                          >
-                            Join Call
-                          </button>
+                          <button onClick={() => navigate(`/video-call/${apt._id}`)} className="text-xs font-bold text-blue-600 hover:text-blue-700 mr-3">Join Call</button>
                         )}
-                        <button
-                          onClick={() => {
-                            setRescheduleApt(apt);
-                            setRescheduleDate(new Date(apt.date).toISOString().split('T')[0]);
-                          }}
-                          className="text-xs text-primary-650 hover:underline"
-                        >
-                          Reschedule
-                        </button>
-                        <button
-                          onClick={() => setCancelId(apt._id)}
-                          className="text-xs text-red-500 hover:underline font-semibold"
-                        >
-                          Cancel
-                        </button>
+                        <button onClick={() => { setRescheduleApt(apt); setRescheduleDate(new Date(apt.date).toISOString().split('T')[0]); }} className="text-xs text-primary-600 hover:underline">Reschedule</button>
+                        <button onClick={() => setCancelId(apt._id)} className="text-xs text-red-500 hover:underline font-semibold">Cancel</button>
                       </>
                     )}
                   </td>

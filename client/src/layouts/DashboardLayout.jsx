@@ -96,9 +96,17 @@ function DashboardLayout() {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-950 transition-colors duration-200">
-      {/* Sidebar Desktop */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transform lg:transform-none lg:opacity-100 transition-all duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-0 hidden lg:block'}`}>
-        <div className="flex flex-col h-full">
+      {/* Mobile Backdrop */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-gray-900/50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 transform lg:transform-none transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex flex-col h-full pb-safe">
           {/* Sidebar Header */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-gray-100 dark:border-gray-800">
             <Link to="/" className="flex items-center space-x-2">
@@ -167,9 +175,9 @@ function DashboardLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col lg:pl-64 min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen transition-all lg:pl-64">
         {/* Top Navbar */}
-        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-6 sticky top-0 z-40 transition-colors duration-200">
+        <header className="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30 transition-colors duration-200">
           <button className="lg:hidden text-gray-500" onClick={() => setSidebarOpen(true)}>
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -178,7 +186,7 @@ function DashboardLayout() {
 
           <div className="flex-1"></div>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Notification bell */}
             <div className="relative">
               <button
@@ -196,7 +204,7 @@ function DashboardLayout() {
               </button>
 
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg py-2 z-50">
+                <div className="absolute right-0 mt-2 w-72 sm:w-80 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-xl shadow-lg py-2 z-40">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-800">
                     <span className="font-semibold text-sm text-gray-900 dark:text-white">Notifications</span>
                     <button onClick={markAllRead} className="text-xs text-primary-600 hover:underline">Mark read</button>
@@ -222,7 +230,7 @@ function DashboardLayout() {
         </header>
 
         {/* Dashboard Area */}
-        <main className="flex-1 p-6 overflow-x-hidden relative">
+        <main className="flex-1 p-4 sm:p-6 overflow-x-hidden relative pb-8">
           <Outlet />
         </main>
       </div>
